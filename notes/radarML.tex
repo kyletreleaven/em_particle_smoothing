@@ -1,0 +1,169 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+%\usepackage{subfigure}
+%\usepackage{upgreek}
+\usepackage{graphicx}
+
+%\usepackage[dvips,pdftex]{hyperref}
+
+\date{2011-01-26}
+
+\begin{document}
+
+\newcommand{\onehalf}{\frac{1}{2}}
+%
+\newcommand{\obs}{\text{o}}
+\newcommand{\noise}{v}
+\newcommand{\noisevar}{\sigma^2}
+\newcommand{\normpdf}{{\mathcal N}}
+
+\newcommand{\reals}{{\mathbb R}}
+
+% physical notations
+\newcommand{\pos}{{\bf x}}
+\newcommand{\xvar}{x}
+\newcommand{\yvar}{y}
+\newcommand{\zvar}{z}
+\newcommand{\slrange}{R}
+\newcommand{\altitude}{\zvar}
+\newcommand{\bearing}{\theta}
+
+\newcommand{\likelihood}{L}
+
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+
+
+
+
+\section{Maximum Likelihood Projection of Radar Measurements}
+
+
+A perfect radar gives the following measurements for an object at point (in $\reals^3$)
+\[ \pos = (\xvar,\yvar,\zvar): \]
+%
+The \emph{slant range} is the straight-line distance from the origin to the object;
+\[
+  \slrange := \sqrt{ \xvar^2 + \yvar^2 + \zvar^2 } ;
+\]
+the \emph{altitude} is the vertical height
+\[ \zvar := \zvar; \]
+the \emph{bearing} is the angle
+\[ \bearing := \arctan2(\yvar,\xvar). \]
+
+\newcommand{\obstuple}{{(\slrange^\obs,\altitude^\obs,\bearing^\obs)}}
+\newcommand{\noisetuple}{{(\noise_\slrange,\noise_\altitude,\noise_\bearing)}}
+
+Consider a noisy radar which gives readings $\obstuple$,
+where
+\[
+\begin{aligned}
+  \slrange^\obs = \slrange + \noise_\slrange	\\
+  \altitude^\obs = \altitude + \noise_\altitude	\\
+  \bearing^\obs = \bearing + \noise_\bearing;
+\end{aligned}
+\]
+%
+Here, $\noisetuple$ denotes the sensor \emph{noise}, with
+\[
+  \noise_\slrange \sim \normpdf(0,\noisevar_\slrange),
+  \quad
+  \noise_\altitude \sim \normpdf(0,\noisevar_\altitude),
+  \quad
+  \noise_\bearing \sim \normpdf(0,\noisevar_\bearing),
+\]
+and so given position $\pos$, the distribution of $\obstuple$
+has probability density function (pdf)
+\[
+  \likelihood(\slrange^\obs,\altitude^\obs,\bearing^\obs ; \pos ) :=
+  \normpdf( \slrange^\obs ; \slrange(\pos), \noisevar_\slrange )
+  \times
+  \normpdf( \altitude^\obs ; \altitude(\pos), \noisevar_\altitude )
+  \times
+  \normpdf( \bearing^\obs ; \bearing(\pos), \noisevar_\bearing ).
+\]
+
+We would like to obtain an \emph{estimate} $\hat\pos \equiv (\hat\xvar,\hat\yvar,\hat\zvar)$ of the position,
+by the maximum likelihood (ML) projection of $\obstuple$
+\[
+\argmax_\pos \likelihood(\slrange^\obs,\altitude^\obs,\bearing^\obs ; \pos ).
+\]
+%
+\newcommand{\xyrad}{r}
+Substituting $\xyrad := \sqrt{ \xvar^2 + \yvar^2 }$,
+we can write
+\[
+  \likelihood(\slrange^\obs,\altitude^\obs,\bearing^\obs ; \pos ) :=
+  \normpdf( \slrange^\obs ; \slrange(\xyrad,\zvar), \noisevar_\slrange )
+  \times
+  \normpdf( \altitude^\obs ; \altitude(\xyrad,\zvar), \noisevar_\altitude )
+  \times
+  \normpdf( \bearing^\obs ; \bearing(\bearing), \noisevar_\bearing ).
+\]
+Clearly,
+\[
+  \hat\bearing := \bearing^\obs,
+\]
+and we can focus on the simpler problem
+\[
+  \argmax_{\xyrad,\zvar} \tilde\likelihood(\slrange^\obs,\altitude^\obs ; \xyrad, \zvar )
+\]
+where
+\[
+  \tilde\likelihood(\slrange^\obs,\altitude^\obs ; \xyrad, \zvar ) 
+  :=
+  \normpdf( \slrange^\obs ; \slrange(\xyrad,\zvar), \noisevar_\slrange )
+  \times
+  \normpdf( \altitude^\obs ; \zvar, \noisevar_\altitude ).
+\]
+%
+This can be achieved by
+\[
+  \argmin_{\zvar', \slrange' \geq |\zvar'|}
+  \frac{ \left( \slrange' - \slrange^\obs  \right)^2 }{ \noisevar_\slrange }
+  +
+  \frac{ \left(  \zvar' - \altitude^\obs \right)^2 }{ \noisevar_\altitude }.
+\]
+
+If $\slrange^\obs \geq |\altitude^\obs|$, then clearly $\hat\altitude = \altitude^\obs$
+and $\hat\slrange = \slrange^\obs$.
+%
+If not, then the inequality constraint holds with equality,
+and we have
+\[
+  \argmin_{\zvar'}
+  \frac{ \left( |\zvar'| - \slrange^\obs \right)^2 }{ \noisevar_\slrange }
+  +
+  \frac{ \left(  \zvar'  - \altitude^\obs \right)^2 }{ \noisevar_\altitude }.
+\]
+%
+We can split this into a two sided optimization,
+taking the \emph{best} solution among
+\[
+  \argmin_{\zvar' \geq 0 }
+  \frac{ \left( \zvar' - \slrange^\obs \right)^2 }{ \noisevar_\slrange }
+  +
+  \frac{ \left(  \zvar'  - \altitude^\obs \right)^2 }{ \noisevar_\altitude }.
+\]
+%
+and
+%
+\[
+  \argmin_{\zvar' \leq 0 }
+  \frac{ \left( \zvar' + \slrange^\obs \right)^2 }{ \noisevar_\slrange }
+  +
+  \frac{ \left(  \zvar'  - \altitude^\obs \right)^2 }{ \noisevar_\altitude }.
+\]
+
+
+
+
+
+
+
+
+\end{document}
